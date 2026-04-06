@@ -1,0 +1,15 @@
+[project]
+name = "debug-env"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openenv-core>=0.2.3",
+]
+[project.scripts]
+server = "server.app:main"
+
+
+
+

@@ -1,0 +1,36 @@
+name: debug-env
+description: Real-world debugging environment for backend/system failures
+version: 1.0.0
+
+entrypoint: server.app:main
+
+tasks:
+  - api_latency
+  - db_performance
+  - misleading_logs
+  - multi_root_issue
+  - retry_trap_issue
+  - misleading_cache_issue
+  - auth_failure
+  - load_balancer_issue
+  - database_down
+  - rate_limit_issue
+  - security_breach
+
+observation_space:
+  type: object
+  properties:
+    error:
+      type: string
+    logs:
+      type: string
+    metrics:
+      type: object
+
+action_space:
+  type: string
+  description: Action string like check_logs, check_db, fix_db, etc.
+
+reward_range: [-10, 30]
+
+max_steps: 10
