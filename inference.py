@@ -66,39 +66,54 @@ async def main():
     steps = 0
     success = False
 
-    # RESET
-    res = requests.post(f"{ENV_URL}/reset").json()
-    observation = res["observation"]
-    task_name = res["task"]
+    # 1. RESET - Use .get() to prevent KeyError crashes
+    try:
+        res = requests.post(f"{ENV_URL}/reset").json()
+    except Exception as e:
+        print(f"[ERROR] Could not connect to Environment: {e}")
+        return
 
+    # Extract observation safely
+    observation = res.get("observation", {})
+    
+    # Use a generic name for the log (Rules: LLM shouldn't know the task name)
+    task_name = "openenv-debug-task" 
+    
     log_start(task_name)
 
+    # 2. STEP LOOP
     for step in range(1, MAX_STEPS + 1):
         action = get_action(client, observation)
-
-        result = requests.post(
-            f"{ENV_URL}/step",
-            json={"action": action}
-        ).json()
-
-        reward = result["reward"]
-        done = result["done"]
-        observation = result["observation"]
-
-        rewards.append(reward)
-        steps = step
-
-        log_step(step, action, reward, done, None)
-
-        if done:
+        
+        try:
+            result = requests.post(
+                f"{ENV_URL}/step", 
+                json={"action": action}
+            ).json()
+            
+            reward = result.get("reward", 0.0)
+            done = result.get("done", False)
+            observation = result.get("observation", {})
+            
+            rewards.append(reward)
+            steps = step
+            
+            log_step(step, action, reward, done, None)
+            
+            if done:
+                break
+        except Exception as e:
+            log_step(step, action, 0.0, False, str(e))
             break
 
-    # GET SCORE
-    score_res = requests.get(f"{ENV_URL}/grade").json()
-    score = score_res["score"]
+    # 3. GET SCORE
+    try:
+        score_res = requests.get(f"{ENV_URL}/grade").json()
+        score = score_res.get("score", 0.0)
+    except:
+        score = 0.0
 
     success = score > 0.5
-
     log_end(success, steps, score, rewards)
 
 
