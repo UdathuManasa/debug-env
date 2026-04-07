@@ -70,12 +70,9 @@ class Task:
 
 
 class TaskManager:
+    _tasks = None
     _current_task_index = 0
-
-    @classmethod
-    def get_random_task(cls):
-
-        base_config = {
+    _base_config = {
             "default_weight": 3,
             "progress_bonus": 0.5,
             "partial_base": 2,
@@ -88,7 +85,10 @@ class TaskManager:
             "repeat_penalty": -2
         }
 
-        tasks = [
+    @classmethod
+    def _init_tasks(cls):
+        if cls._tasks is None:
+            cls._tasks = [
 
             Task(
                 name="api_latency",
@@ -104,7 +104,7 @@ class TaskManager:
                     "check_logs", "check_db", "increase_timeout"
                 ],
                 solution="increase_timeout",
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_db": 4,
@@ -126,7 +126,7 @@ class TaskManager:
                     "check_logs", "check_db", "optimize_query"
                 ],
                 solution="optimize_query",
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_db": 5,
@@ -149,7 +149,7 @@ class TaskManager:
                 ],
                 solution="fix_db",
                 reward_config={
-                    **base_config,
+                    **cls._base_config,
                     "irrelevant": -5
                 },
                 step_weights={
@@ -178,7 +178,7 @@ class TaskManager:
                     "optimize_memory"
                 ],
                 solution="optimize_memory",  # last step completes
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_db": 4,
@@ -206,7 +206,7 @@ class TaskManager:
                 ],
                 solution="restart_service",
                 reward_config={
-                    **base_config,
+                    **cls._base_config,
                     "repeat_penalty": -2  # stronger loop punishment
                 },
                 step_weights={
@@ -234,7 +234,7 @@ class TaskManager:
                 ],
                 solution="fix_cache",
                 reward_config={
-                    **base_config,
+                    **cls._base_config,
                     "irrelevant": -5  # stronger penalty
                 },
                 step_weights={
@@ -262,7 +262,7 @@ class TaskManager:
                     "fix_auth"
                 ],
                 solution="fix_auth",
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_auth_service": 5,
@@ -289,7 +289,7 @@ class TaskManager:
                     "fix_lb"
                 ],
                 solution="fix_lb",
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_routing": 5,
@@ -314,7 +314,7 @@ class TaskManager:
                     "restart_db"
                 ],
                 solution="restart_db",
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_db": 6,
@@ -338,7 +338,7 @@ class TaskManager:
                     "increase_limit"
                 ],
                 solution="increase_limit",
-                reward_config=base_config,
+                reward_config=cls._base_config,
                 step_weights={
                     "check_logs": 3,
                     "check_rate_limit": 5,
@@ -363,7 +363,7 @@ class TaskManager:
                 ],
                 solution="block_ip",
                 reward_config={
-                    **base_config,
+                    **cls._base_config,
                     "irrelevant": -6  # stricter penalty
                 },
                 step_weights={
@@ -374,8 +374,22 @@ class TaskManager:
             ),
         ]
 
-        selected_task = tasks[cls._current_task_index]
-        
-        cls._current_task_index = (cls._current_task_index + 1) % len(tasks)
-        
-        return selected_task
+    @classmethod
+    def get_all_task_names(cls):
+        cls._init_tasks()
+        return [task.name for task in cls._tasks]
+
+    @classmethod
+    def get_task_by_name(cls, name):
+        cls._init_tasks()
+        for task in cls._tasks:
+            if task.name == name:
+                return task
+        raise ValueError(f"Task {name} not found")
+
+    @classmethod
+    def get_random_task(cls):
+        cls._init_tasks()
+        task = cls._tasks[cls._current_task_index]
+        cls._current_task_index = (cls._current_task_index + 1) % len(cls._tasks)
+        return task

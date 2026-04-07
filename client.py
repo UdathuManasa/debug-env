@@ -8,15 +8,17 @@ class OpenEnvClient(openenv.OpenEnvClient):
         self.url = url.rstrip("/")
         self.timeout = 10
 
-    def reset(self) -> StepResult:
-        """Calls the /reset endpoint and returns the initial observation."""
-        response = requests.post(f"{self.url}/reset",timeout=self.timeout)
+    def reset(self, task: str = None) -> StepResult:
+        url = f"{self.url}/reset"
+        if task:
+            url += f"?task={task}"
+
+        response = requests.post(url, timeout=self.timeout)
         response.raise_for_status()
         return StepResult(**response.json())
 
     def step(self, action: Action) -> StepResult:
         """Sends an action to the /step endpoint."""
-        # Note: Your server expects action.action as a string in the logic
         response = requests.post(f"{self.url}/step", json=action.model_dump(),timeout=self.timeout)
         response.raise_for_status()
         return StepResult(**response.json())

@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from server.models import Action, StepResult, State, GradeResponse
-from server.env import DebugEnv   
+from server.env import DebugEnv
+from server.task import TaskManager
 import uvicorn
 
 app = FastAPI()
@@ -39,12 +40,16 @@ def mcp():
         "result": {"status": "connected"}
     }
 
+#--------------------- GET Tasks --------------
+@app.get("/tasks")
+def get_tasks():
+    return {"tasks": TaskManager.get_all_task_names()}
 
 # ---------------- RESET ----------------
 @app.post("/reset", response_model=StepResult)
-def reset():
-    return env.reset()
-    
+def reset(task: str = Query(None)):
+    return env.reset(task)
+
 
 
 # ---------------- STEP ----------------

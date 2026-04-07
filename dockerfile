@@ -1,6 +1,7 @@
 FROM python:3.10-slim
 
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
 # Install dependencies
 COPY requirements.txt .

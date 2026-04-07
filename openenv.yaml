@@ -34,3 +34,7 @@ action_space:
 reward_range: [-10, 30]
 
 max_steps: 10
+
+grader:
+  type: endpoint
+  endpoint: /grade

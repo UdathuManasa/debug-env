@@ -1,4 +1,4 @@
-from server.models import Observation, Action, StepResult, State, GradeResponse
+from server.models import Observation, StepResult, State, GradeResponse
 from server.task import TaskManager
 
 
@@ -8,17 +8,16 @@ class DebugEnv:
         self.task = None
 
     def _ensure_task(self):
-        # This 'if' is the most important line of code.
-        # If self.task is NOT None (it's already been set), 
-        # this function finishes instantly and does NOTHING.
         if self.task is None:
-            from server.task import TaskManager
             self.task = TaskManager.get_random_task()
 
     # ---------------- RESET ----------------
-    def reset(self):
-        self.task = TaskManager.get_random_task()
- 
+    def reset(self, task_name=None):
+        if task_name:
+            self.task = TaskManager.get_task_by_name(task_name)
+        else:
+            self.task = TaskManager.get_random_task()
+
         return StepResult(
             observation=Observation(**self.task.observation),
             reward=0.0,
@@ -31,7 +30,7 @@ class DebugEnv:
         )
 
     # ---------------- STEP ----------------
-    def step(self, action: Action):
+    def step(self, action: str):
         try:
             self._ensure_task()
             if  self.task.is_done():
@@ -66,7 +65,7 @@ class DebugEnv:
                     "metrics": {}
             }
             return StepResult(
-                observation=Observation(observation),
+                observation=Observation(**observation),
                 reward=0.01,
                 done=True,
                 info = {
