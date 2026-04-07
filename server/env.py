@@ -105,7 +105,7 @@ class DebugEnv:
             self._ensure_task()
 
             if not self.task.actions_taken:
-                return 0.0
+                return GradeResponse(score=0.01)
 
             max_possible = 0
 
