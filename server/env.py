@@ -78,7 +78,7 @@ class DebugEnv:
 
         score = self.task.total_reward / max_possible
 
-        cur_grade =  max(0.0, min(1.0, score))
+        cur_grade =  max(0.01, min(0.99, score))
         return GradeResponse(score=cur_grade)
     
 

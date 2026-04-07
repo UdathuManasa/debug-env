@@ -1,4 +1,3 @@
-import random
 
 
 class Task:
@@ -71,9 +70,10 @@ class Task:
 
 
 class TaskManager:
+    _current_task_index = 0
 
-    @staticmethod
-    def get_random_task():
+    @classmethod
+    def get_random_task(cls):
 
         base_config = {
             "default_weight": 3,
@@ -374,4 +374,8 @@ class TaskManager:
             ),
         ]
 
-        return random.choice(tasks)
+        selected_task = tasks[cls._current_task_index]
+        
+        cls._current_task_index = (cls._current_task_index + 1) % len(tasks)
+        
+        return selected_task
