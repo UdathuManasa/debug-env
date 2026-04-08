@@ -87,9 +87,25 @@ The environment exposes four primary REST endpoints via **FastAPI** to facilitat
 This project uses uv for fast, reproducible dependency management.
 ### Run the Environment Server
 uv run python -m server.app
-### Plugin required
-python,git,huggingface_hub,openenv-core,docker
+### Plugins required
+python,git,huggingface_hub,openenv-core,docker,uv
 ### Install dependencies
 pip install fastapi uvicorn requests
+pip install openenv
+pip install uv
+uv lock
+To Build docker image : docker build -t debug-env .
 ### Validate 
 openenv validate --url http://localhost:7860
+### deployment
+To push code to hugging phase :
+uv run openenv push --repo-id Udathu/debug-env
+## 🧩 Tech Stack
+FastAPI (backend environment)
+Pydantic (typed models)
+Docker (containerization)
+OpenEnv (environment standard)
+Hugging Face (deployment)
+OpenAI-compatible LLM API (inference)
+
+
