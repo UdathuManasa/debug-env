@@ -83,23 +83,23 @@ uv run python -m server.app
 - OpenEnv CLI
 - uv (dependency manager)
 ### Install dependencies
-pip install fastapi uvicorn requests
-pip install openenv
-pip install uv
-uv lock
-To Build docker image : docker build -t debug-env .
+- pip install fastapi uvicorn requests
+- pip install openenv
+- pip install uv
+- uv lock
+- To Build docker image : docker build -t debug-env .
 ### Validate 
 openenv validate --url http://localhost:7860
 ### deployment
 To push code to hugging phase :
 uv run openenv push --repo-id Udathu/debug-env
 ## 🧩 Tech Stack
-FastAPI (backend environment)
-Pydantic (typed models)
-Docker (containerization)
-OpenEnv (environment standard)
-Hugging Face (deployment)
-OpenAI-compatible LLM API (inference)
+- FastAPI (backend environment)
+- Pydantic (typed models)
+- Docker (containerization)
+- OpenEnv (environment standard)
+- Hugging Face (deployment)
+- OpenAI-compatible LLM API (inference)
 
 
 <img width="1536" height="1024" alt="d6354b5e-9636-468f-ac99-35095a6038a8" src="https://github.com/user-attachments/assets/95f420c0-27ea-4bd5-981c-91c42822b2d8" />
