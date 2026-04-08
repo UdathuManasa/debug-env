@@ -59,9 +59,12 @@ The environment exposes four primary REST endpoints via **FastAPI** to facilitat
 
 ### 1. `POST /reset`
 **Purpose:** Initializes a new debugging session.
-- **Request Body:** `{"task_name": "string"}` (Optional)
-- **Logic:** If no `task_name` is provided, the server utilizes **Sequential Round-Robin logic** to rotate through the 11 tasks.
-- **Returns:** The initial `observation` (logs, metrics, errors).
+...
+- **Returns:** A `StepResult` object containing:
+    - `observation`: The initial state (logs, metrics, errors) of the task.
+    - `reward`: Initialized to `0.0`.
+    - `done`: Initialized to `False`.
+    - `info`: Diagnostic metadata including `progress`, `remaining_steps`, and `total_steps_taken`.
 
 ### 2. `POST /step`
 **Purpose:** Executes an agent action and transitions the environment state.
@@ -69,6 +72,8 @@ The environment exposes four primary REST endpoints via **FastAPI** to facilitat
 - **Returns:** - `observation`: Updated logs/metrics after the action.
     - `reward`: Floating point value (e.g., `1.0` for success).
     - `done`: Boolean indicating if the issue is resolved.
+    - `info` (Optional Metadata): Contains diagnostic data such as `total_steps_taken` and `remaining_steps`. 
+      *(Note: Standard inference clients may choose to ignore this field during high-speed evaluation.)*
 
 ### 3. `GET /grade`
 **Purpose:** Final evaluation of the agent's performance.
