@@ -19,19 +19,19 @@ This environment features a Registry-based Grader System designed to evaluate an
 - **Granular Reward Modeling:** Sparse reward signals that prioritize resolution efficiency and accuracy.
 
 ### 🏗️ Infrastructure & Performance
-api_latency → Detect middleware vs downstream latency
-db_performance → Identify indexing vs connection issues
-database_down → Service health + connectivity debugging
-load_balancer_issue → Traffic imbalance across nodes
+- **api_latency** → Detect middleware vs downstream latency.
+- **db_performance** → Identify indexing vs connection issues.
+- **database_down** → Service health + connectivity debugging.
+- **load_balancer_issue** → Traffic imbalance across nodes.
 ### 🔐 Security & Compliance
-auth_failure → Token expiry vs IAM misconfiguration
-security_breach → Hidden malicious activity behind system noise
-rate_limit_issue → Detect 429 + suggest throttling fixes
+- **auth_failure** → Token expiry vs IAM misconfiguration.
+- **security_breach** → Hidden malicious activity behind system noise.
+- **rate_limit_issue** → Detect 429 + suggest throttling fixes.
 ### 🧠 Agentic Reasoning & Observation Traps
-misleading_logs (Hardest) → Logs show success but metrics fail
-retry_trap_issue → Infinite retry loop detection
-multi_root_issue → Cascading failures
-misleading_cache_issue → Stale cache vs fresh headers
+- **misleading_logs (Hardest)** → Logs show success but metrics fail.
+- **retry_trap_issue** → Infinite retry loop detection.
+- **multi_root_issue** → Cascading failures.
+- **misleading_cache_issue** → Stale cache vs fresh headers.
 
 ## 🏗️ Technical Architecture
 The environment is built using a **Registry-based Design Pattern**, allowing for decoupled task logic and grader validation.
@@ -76,8 +76,12 @@ The environment exposes four primary REST endpoints via **FastAPI** to facilitat
 This project uses uv for fast, reproducible dependency management.
 ### Run the Environment Server
 uv run python -m server.app
-### Plugins required
-python,git,huggingface_hub,openenv-core,docker,uv
+### Prerequisites
+- Python 3.10+
+- Docker
+- Git
+- OpenEnv CLI
+- uv (dependency manager)
 ### Install dependencies
 pip install fastapi uvicorn requests
 pip install openenv
