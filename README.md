@@ -18,31 +18,20 @@ This environment features a Registry-based Grader System designed to evaluate an
 - **Stateful Sequential Logic:** Tasks are served via a rotating registry to ensure robustness across evaluation episodes.
 - **Granular Reward Modeling:** Sparse reward signals that prioritize resolution efficiency and accuracy.
 
-## 🏗️ Infrastructure & Performance
-api_latency: Tests if the agent can identify bottlenecked middleware vs. downstream service delays.
-
-db_performance: Requires the agent to differentiate between missing indexes and high connection overhead.
-
-database_down: A baseline connectivity test involving connection string validation and service health.
-
-load_balancer_issue: A routing complexity task where traffic is unevenly distributed across healthy nodes.
-
-## 🔐 Security & Compliance
-auth_failure: Evaluates the agent's ability to debug expired tokens vs. misconfigured IAM roles.
-
-security_breach: A high-stakes scenario where the agent must identify unauthorized script execution hidden behind "High CPU" metrics.
-
-rate_limit_issue: Tests if the agent can identify a 429 error and suggest traffic-shaping solutions.
-
-## 🧠 Agentic Reasoning & "Observation Traps"
-misleading_logs: (The Hardest Task) The logs report "Success 200," but the metrics show a 0% completion rate. Tests if the agent trusts raw data over string logs.
-
-retry_trap_issue: A logic loop where a service keeps retrying a "Permanent Failure." The agent must break the loop rather than just "restarting."
-
-multi_root_issue: A cascading failure where fixing the first error (e.g., Memory) reveals a second hidden error (e.g., Disk I/O).
-
-misleading_cache_issue: Tests if the agent can identify stale data even when the origin server is returning "Fresh" headers.
-
+### 🏗️ Infrastructure & Performance
+api_latency → Detect middleware vs downstream latency
+db_performance → Identify indexing vs connection issues
+database_down → Service health + connectivity debugging
+load_balancer_issue → Traffic imbalance across nodes
+### 🔐 Security & Compliance
+auth_failure → Token expiry vs IAM misconfiguration
+security_breach → Hidden malicious activity behind system noise
+rate_limit_issue → Detect 429 + suggest throttling fixes
+### 🧠 Agentic Reasoning & Observation Traps
+misleading_logs (Hardest) → Logs show success but metrics fail
+retry_trap_issue → Infinite retry loop detection
+multi_root_issue → Cascading failures
+misleading_cache_issue → Stale cache vs fresh headers
 
 ## 🏗️ Technical Architecture
 The environment is built using a **Registry-based Design Pattern**, allowing for decoupled task logic and grader validation.
