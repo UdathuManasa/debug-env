@@ -86,12 +86,12 @@ uv run python -m server.app
 - pip install fastapi uvicorn requests
 - pip install openenv
 - pip install uv
-- uv lock
-- To Build docker image : docker build -t debug-env .
-### Validate 
+- uv lock ( to generate lock file)
+### 🐳 Docker Setup
+ docker build -t debug-env .
+### Validate Enviroment
 openenv validate --url http://localhost:7860
-### deployment
-To push code to hugging phase :
+### deployment (hugging face)
 uv run openenv push --repo-id Udathu/debug-env
 ## 🧩 Tech Stack
 - FastAPI (backend environment)
