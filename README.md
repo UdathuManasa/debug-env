@@ -12,6 +12,12 @@ app_port: 7860
 
 This environment features a Registry-based Grader System designed to evaluate an LLM's ability to reason through complex, non-linear debugging scenarios. Unlike basic "error-match" tasks, these 11 scenarios include Agentic Traps and Multi-step Dependencies.
 
+## 🚀 Key Features
+- **11 Unique Scenarios:** Covering Infrastructure, Security, and Application Logic.
+- **Agentic Traps:** Built-in "Red Herring" logs to test if the LLM trusts raw metrics over misleading text logs.
+- **Stateful Sequential Logic:** Tasks are served via a rotating registry to ensure robustness across evaluation episodes.
+- **Granular Reward Modeling:** Sparse reward signals that prioritize resolution efficiency and accuracy.
+
 ## 🏗️ Infrastructure & Performance
 api_latency: Tests if the agent can identify bottlenecked middleware vs. downstream service delays.
 
@@ -36,3 +42,39 @@ retry_trap_issue: A logic loop where a service keeps retrying a "Permanent Failu
 multi_root_issue: A cascading failure where fixing the first error (e.g., Memory) reveals a second hidden error (e.g., Disk I/O).
 
 misleading_cache_issue: Tests if the agent can identify stale data even when the origin server is returning "Fresh" headers.
+
+
+## 🏗️ Technical Architecture
+The environment is built using a **Registry-based Design Pattern**, allowing for decoupled task logic and grader validation.
+
+### System Flow
+1. **Reset:** Agent requests a task (e.g., `api_latency`).
+2. **Observe:** Server returns a JSON observation containing `logs`, `metrics`, and `error_states`.
+3. **Step:** Agent selects an action (e.g., `fix_db`).
+4. **Evaluate:** The custom **Grader Class** calculates the reward based on the state transition.
+
+## 🔌 API Reference
+
+The environment exposes four primary REST endpoints via **FastAPI** to facilitate the RL feedback loop.
+
+### 1. `POST /reset`
+**Purpose:** Initializes a new debugging session.
+- **Request Body:** `{"task_name": "string"}` (Optional)
+- **Logic:** If no `task_name` is provided, the server utilizes **Sequential Round-Robin logic** to rotate through the 11 tasks.
+- **Returns:** The initial `observation` (logs, metrics, errors).
+
+### 2. `POST /step`
+**Purpose:** Executes an agent action and transitions the environment state.
+- **Request Body:** `{"action": "string"}`
+- **Returns:** - `observation`: Updated logs/metrics after the action.
+    - `reward`: Floating point value (e.g., `1.0` for success).
+    - `done`: Boolean indicating if the issue is resolved.
+
+### 3. `GET /grade`
+**Purpose:** Final evaluation of the agent's performance.
+- **Returns:** `{"score": float}`
+- **Technical Note:** Calculates the final score based on task completion and step efficiency. This endpoint is used by the **Meta Validator** to determine the final leaderboard standing.
+
+### 4. `GET /state`
+**Purpose:** System telemetry and observability.
+- **Returns:** The current internal state, including the active task, history of actions taken, and cumulative rewards. Useful for real-time monitoring of the agent's "thought process."
