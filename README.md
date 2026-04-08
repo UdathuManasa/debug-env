@@ -59,7 +59,6 @@ The environment exposes four primary REST endpoints via **FastAPI** to facilitat
 
 ### 1. `POST /reset`
 **Purpose:** Initializes a new debugging session.
-...
 - **Returns:** A `StepResult` object containing:
     - `observation`: The initial state (logs, metrics, errors) of the task.
     - `reward`: Initialized to `0.0`.
@@ -83,3 +82,14 @@ The environment exposes four primary REST endpoints via **FastAPI** to facilitat
 ### 4. `GET /state`
 **Purpose:** System telemetry and observability.
 - **Returns:** The current internal state, including the active task, history of actions taken, and cumulative rewards. Useful for real-time monitoring of the agent's "thought process."
+
+## 🛠️ Installation & Execution
+This project uses uv for fast, reproducible dependency management.
+### Run the Environment Server
+uv run python -m server.app
+### Plugin required
+python,git,huggingface_hub,openenv-core,docker
+### Install dependencies
+pip install fastapi uvicorn requests
+### Validate 
+openenv validate --url http://localhost:7860
