@@ -1,5 +1,5 @@
-from server.models import Observation, StepResult, State, GradeResponse
-from server.task import TaskManager
+from models import Observation, StepResult, State, GradeResponse
+from task import TaskManager
 
 
 class DebugEnv:
@@ -18,15 +18,13 @@ class DebugEnv:
         else:
             self.task = TaskManager.get_random_task()
 
+        self.task.reset_state()
+
         return StepResult(
             observation=Observation(**self.task.observation),
             reward=0.0,
             done=False,
-            info = {
-                "progress": self.task.step_index,
-                "remaining_steps": len(self.task.flow) - self.task.step_index,
-                "total_steps_taken": len(self.task.actions_taken)
-            }
+            info={}
         )
 
     # ---------------- STEP ----------------
@@ -38,11 +36,7 @@ class DebugEnv:
                     observation=Observation(**self.task.observation),
                     reward=0.0,
                     done=True,
-                    info = {
-                        "progress": self.task.step_index,
-                        "remaining_steps": 0,
-                        "total_steps_taken": len(self.task.actions_taken)
-                    }
+                    info={}
                 )
 
             reward = self.task.apply_action(action)
@@ -52,51 +46,30 @@ class DebugEnv:
                 observation=Observation(**self.task.observation),
                 reward=float(reward),
                 done=done,
-                info = {
-                    "progress": self.task.step_index,
-                    "remaining_steps": len(self.task.flow) - self.task.step_index,
-                    "total_steps_taken": len(self.task.actions_taken)
-                }
+                info={}
             )
         except Exception as e:
-            observation={
-                    "error": str(e),
-                    "logs": "",
-                    "metrics": {}
-            }
             return StepResult(
-                observation=Observation(**observation),
+                observation=Observation(
+                    error=str(e),
+                    logs="",
+                    metrics={}
+                ),
                 reward=0.01,
                 done=True,
-                info = {
-                    "progress": 0,
-                    "remaining_steps": 0,
-                    "total_steps_taken": 0
-                }
+                info={}
             )
 
     # ---------------- STATE ----------------
-    
     def state(self):
-        try: 
-            self._ensure_task()
-            return State(
-                task=self.task.name,
-                step_index=self.task.step_index,
-                actions_taken=self.task.actions_taken,
-                total_reward=self.task.total_reward,
-                done=self.task.done
-            )
-        except Exception as e:
-            return State(
-                task=str(e),
-                step_index=0,
-                actions_taken=0,
-                total_reward=0.01,
-                done=True
-            )
         
-    
+        self._ensure_task()
+        return State(
+            task=self.task.name,
+            actions_taken=self.task.actions_taken,
+            total_reward=self.task.total_reward,
+            done=self.task.done
+        )
 
     # ---------------- GRADER ----------------
     def grade(self):
@@ -106,18 +79,24 @@ class DebugEnv:
             if not self.task.actions_taken:
                 return GradeResponse(score=0.01)
 
-            max_possible = 0
+            cfg = self.task.reward_config
 
-            for i, action in enumerate(self.task.flow):
-                base = self.task.step_weights.get(action, self.task.reward_config["default_weight"])
-                max_possible += base + (i * self.task.reward_config["progress_bonus"])
+            relevant_actions = set(self.task.required_signals.keys()) | \
+                            set(self.task.optional_signals.keys()) | \
+                            {self.task.solution}
 
-            max_possible += self.task.reward_config["final_bonus"]
+            max_possible = sum(
+                self.task.step_weights.get(a, 0) for a in relevant_actions
+            ) + cfg["final_bonus"] + cfg.get("optional_bonus", 0)
 
-            score = self.task.total_reward / max_possible
+            min_possible = cfg["no_investigation_penalty"]
 
-            cur_grade =  max(0.01, min(0.99, score))
-            return GradeResponse(score=cur_grade)
+            score = (self.task.total_reward - min_possible) / (max_possible - min_possible)
+
+            score = max(0.01, min(0.99, score))
+
+            return GradeResponse(score=round(score, 3))
+
         except Exception:
             return GradeResponse(score=0.01)
 

@@ -21,7 +21,6 @@ class StepResult(BaseModel):
 
 class State(BaseModel):
     task: str
-    step_index: int
     actions_taken: List[str]
     total_reward: float
     done: bool

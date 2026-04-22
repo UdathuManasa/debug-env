@@ -31,12 +31,14 @@ def get_action(client: OpenAI, observation: dict) -> str:
     prompt = f"""
 You are debugging a production issue.
 
+Think step by step before choosing an action.
+
 Observation:
 Error: {observation.get("error")}
 Logs: {observation.get("logs")}
 Metrics: {observation.get("metrics")}
 
-Choose ONE action:
+Available actions:
 check_logs, check_db, check_memory, fix_db, optimize_query,
 restart_service, check_service, check_cache, fix_cache,
 check_auth_service, validate_token, fix_auth,
@@ -44,7 +46,12 @@ check_routing, check_lb, fix_lb,
 restart_db, check_rate_limit, increase_limit,
 analyze_traffic, block_ip
 
-Return ONLY the action string.
+Rules:
+- First investigate before fixing
+- Avoid repeating same actions
+- Choose the most useful next step
+
+Return ONLY the final action.
 """
 
     try:
