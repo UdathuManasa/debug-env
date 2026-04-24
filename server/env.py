@@ -1,5 +1,5 @@
-from models import Observation, StepResult, State, GradeResponse
-from task import TaskManager
+from server.models import Observation, StepResult, State, GradeResponse
+from server.task import TaskManager
 
 
 class DebugEnv:
