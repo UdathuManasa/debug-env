@@ -1,10 +1,14 @@
 from server.base_service import BaseService
 
 class APIService(BaseService):
-    def __init__(self, db_service, auth_service):
+    def __init__(self, db_service, auth_service,cache_service,queue_service,lb_service,app_service):
         super().__init__("api")
         self.db = db_service
         self.auth = auth_service
+        self.cache = cache_service
+        self.queue = queue_service
+        self.lb = lb_service
+        self.app = app_service
         self.issue = None
 
     # ------------------------
@@ -113,6 +117,24 @@ class APIService(BaseService):
         if db_issue and auth_issue:
             self.logs.append("Multiple downstream dependencies failing")
             self.metrics["error_rate"] = min(1.0, self.metrics["error_rate"] + 0.2)
+        # -------- QUEUE --------
+        if self.queue.issue:
+            self.logs.append("Delayed processing detected in request flow")
+
+        # -------- LOAD BALANCER --------
+        if self.lb.issue:
+            self.logs.append("Traffic routing inconsistencies detected")
+
+        # -------- APP --------
+        if self.app.issue:
+            self.logs.append("Service instability observed")
+        # -------- CACHE --------
+        if self.cache.issue:
+            self.logs.append("Inconsistent responses observed (possible cache issue)")
+            self.metrics["latency"] += 200
+        # -------- FINAL FALLBACK --------
+        if not self.logs:
+            self.logs.append("System behaving abnormally")
 
     # ------------------------
     # Investigation

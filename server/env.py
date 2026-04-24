@@ -38,8 +38,8 @@ class DebugEnv:
         self.cache = CacheService()
         self.queue = QueueService()
         self.lb = LoadBalancerService()
-        self.api = APIService(self.db, self.auth)
         self.app = AppServerService()
+        self.api = APIService(self.db, self.auth,self.cache,self.queue,self.lb,self.app)
 
     def _init_rewards(self):
         """Configure reward structure."""
