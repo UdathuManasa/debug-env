@@ -10,16 +10,22 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
 
-MAX_STEPS = 10
+MAX_STEPS = 20
 
 
 def log_start(task: str):
     print(f"[START] task={task} env=debug-env model={MODEL_NAME}", flush=True)
 
 
-def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]):
+def log_step(step: int, action: str, reward: float, done: bool, observation: dict, error: Optional[str]):
     err = error if error else "null"
-    print(f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={err}", flush=True)
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={err} "
+        f"obs_error={observation.get('error')} "
+        f"obs_logs={observation.get('logs')} "
+        f"obs_metrics={observation.get('metrics')}",
+        flush=True
+    )
 
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]):
@@ -27,11 +33,21 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]):
     print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
 
 
-def get_action(client: OpenAI, observation: dict) -> str:
+def get_action(client: OpenAI, observation: dict, history: List[str]) -> str:
     prompt = f"""
-You are debugging a production issue.
+You are an expert SRE debugging a distributed system.
 
-Think step by step before choosing an action.
+Your goal:
+1. Investigate the system
+2. Identify root cause
+3. Apply correct fix
+
+Rules:
+- Do NOT fix immediately
+- First gather evidence using check_* actions
+- Avoid repeating actions
+- Root cause may NOT be in API
+- Multiple services may be involved
 
 Observation:
 Error: {observation.get("error")}
@@ -39,29 +55,34 @@ Logs: {observation.get("logs")}
 Metrics: {observation.get("metrics")}
 
 Available actions:
-check_logs, check_db, check_memory, fix_db, optimize_query,
-restart_service, check_service, check_cache, fix_cache,
-check_auth_service, validate_token, fix_auth,
-check_routing, check_lb, fix_lb,
-restart_db, check_rate_limit, increase_limit,
-analyze_traffic, block_ip
+check_api, check_auth, check_db, check_cache, check_queue, check_lb, check_app,
+optimize_query, increase_pool, restart_db, cleanup_disk,
+restart_auth, refresh_tokens, fix_invalid_token, increase_rate_limit,
+clear_cache, scale_cache, restart_cache,
+scale_consumers, restart_consumer, fix_ack_logic, restart_queue,
+fix_routing, restart_lb,
+restart_app, fix_memory, scale_app
 
-Rules:
-- First investigate before fixing
-- Avoid repeating same actions
-- Choose the most useful next step
+Think step by step:
+- What does the error suggest?
+- Which service is most likely responsible?
+- What should you inspect next?
 
-Return ONLY the final action.
+Return ONLY the next action.
 """
 
     try:
         res = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+            temperature=0.2,
             max_tokens=20
         )
-        return res.choices[0].message.content.strip()
+
+        action = res.choices[0].message.content.strip()
+
+        return action
+
     except:
         return "check_logs"
 
@@ -71,17 +92,7 @@ async def main():
 
     # ✅ Run multiple tasks
     TASKS = [
-        "api_latency",
-        "db_performance",
-        "misleading_logs",
-        "multi_root_issue",
-        "retry_trap_issue",
-        "misleading_cache_issue",
-        "auth_failure",
-        "load_balancer_issue",
-        "database_down",
-        "rate_limit_issue",
-        "security_breach"
+        "auth_token_expired"
     ]
 
     for task_name in TASKS:
@@ -89,6 +100,7 @@ async def main():
         rewards = []
         steps = 0
         success = False
+        actions_taken = []   # ✅ NEW
 
         try:
             res = requests.post(f"{ENV_URL}/reset?task={task_name}").json()
@@ -100,11 +112,18 @@ async def main():
         log_start(task_name)
 
         for step in range(1, MAX_STEPS + 1):
-            action = get_action(client, observation)
+
+            action = get_action(client, observation, actions_taken)
+
+            # ✅ Safety: avoid repeat manually (backup protection)
+            # if action in actions_taken:
+            #     action = "check_metrics" if "check_metrics" not in actions_taken else "check_db"
+
+            actions_taken.append(action)
 
             try:
                 result = requests.post(
-                    f"{ENV_URL}/step", 
+                    f"{ENV_URL}/step",
                     json={"action": action}
                 ).json()
 
@@ -115,13 +134,13 @@ async def main():
                 rewards.append(reward)
                 steps = step
 
-                log_step(step, action, reward, done, None)
+                log_step(step, action, reward, done, observation, None)
 
                 if done:
                     break
 
             except Exception as e:
-                log_step(step, action, 0.0, False, str(e))
+                log_step(step, action, 0.0, False, {}, str(e))
                 break
 
         try:
