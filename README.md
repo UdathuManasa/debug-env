@@ -1,6 +1,3 @@
-Got it — now we’ll align your README **directly to judging criteria + themes**, not generic polish.
-This version is structured to **maximize score across all 4 criteria** and clearly map to themes.
-
 ---
 
 # 🔧 Debug-Env: Training LLMs to Perform Root Cause Analysis in Distributed Systems
