@@ -67,7 +67,48 @@ Actions taken: {', '.join(history) if history else 'None yet'}
 2. **Investigate before fixing** - Don't guess, gather evidence first
 3. **Multiple services may be involved** - Check all suspicious services
 4. **Match symptoms to solutions** - Use the mapping below
- 
+=== SYSTEM FLOW ===
+
+Client → Load Balancer → API → Auth → Database → Cache → Queue
+========================
+SYSTEM ARCHITECTURE
+========================
+
+Request flow:
+Client → Load Balancer → API → Auth → Database → Cache → Queue → Consumers
+
+Key principles:
+- Failures propagate downstream (early failure breaks everything)
+- Symptoms often appear upstream (API shows errors caused by DB/Auth)
+- Root cause is usually NOT the API layer
+
+========================
+SERVICES OVERVIEW
+========================
+
+Load Balancer (LB):
+- Routes traffic across instances
+- Issues: uneven traffic, high latency, downtime
+
+API:
+- Entry point, shows symptoms (not root cause)
+
+Auth:
+- Handles authentication and tokens
+- Issues: invalid tokens, expired tokens, service down, rate limiting
+
+Database (DB):
+- Stores data
+- Issues: slow queries, connection pool exhaustion, downtime, disk full
+
+Cache:
+- Speeds up reads
+- Issues: stale data, low hit rate, cache down
+
+Queue:
+- Handles async processing
+- Issues: backlog, consumers down, message loss
+
 === INVESTIGATION ACTIONS ===
  
 check_auth    → Reveals: token issues, auth errors, rate limits
@@ -77,34 +118,19 @@ check_queue   → Reveals: backlog, consumer status, message processing
 check_lb      → Reveals: routing distribution, traffic imbalance
 check_api     → Reveals: overall API metrics (usually not the root cause)
  
-=== SYMPTOM → FIX MAPPING ===
- 
-Authentication Issues:
-  "Token validation failed" + "Expiry timestamp older" → refresh_tokens
-  "JWT signature verification failed" → fix_invalid_token
-  "Connection refused to auth service" → restart_auth
-  "Too many requests" + "Rate limit" → increase_rate_limit
- 
-Database Issues:
-  "Execution time exceeded" + "Sequential scan" → optimize_query
-  "Pool limit reached" + "Timeout acquiring connection" → increase_pool
-  "Connection refused" + "Database not reachable" → restart_db
-  "Disk space full" + "Write operations failing" → cleanup_disk
- 
-Cache Issues:
-  "Serving outdated data" + "invalidation delay" → clear_cache
-  "Cache miss rate increasing" → scale_cache
-  "Cache not reachable" → restart_cache
- 
-Queue Issues:
-  "Message backlog increasing" + "unable to keep up" → scale_consumers
-  "No active consumers" → restart_consumer
-  "Message acknowledgment failures" → fix_ack_logic
- 
-Load Balancer Issues:
-  "Traffic unevenly distributed" → fix_routing
-  "Load balancer not responding" → restart_lb
- 
+========================
+AVAILABLE ACTIONS
+========================
+
+Investigation:
+- check_lb, check_api, check_auth, check_db, check_cache, check_queue
+
+Fixes:
+- LB: fix_routing, restart_lb
+- Auth: refresh_tokens, fix_invalid_token, restart_auth, increase_rate_limit
+- DB: optimize_query, increase_pool, restart_db, cleanup_disk
+- Cache: clear_cache, scale_cache, restart_cache
+- Queue: scale_consumers, restart_consumer, fix_ack_logic
 === DECISION LOGIC ===
  
 **If logs are empty or just hints:**
