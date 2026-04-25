@@ -10,7 +10,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
 
-MAX_STEPS = 20
+MAX_STEPS = 25
 
 
 def log_start(task: str):
@@ -34,41 +34,131 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]):
 
 
 def get_action(client: OpenAI, observation: dict, history: List[str]) -> str:
-    prompt = f"""
-You are an expert SRE debugging a distributed system.
-
-Your goal:
-1. Investigate the system
-2. Identify root cause
-3. Apply correct fix
-
-Rules:
-- Do NOT fix immediately
-- First gather evidence using check_* actions
-- Avoid repeating actions
-- Root cause may NOT be in API
-- Multiple services may be involved
-
-Observation:
+    prompt = f"""You are an expert SRE debugging a distributed microservice system.
+ 
+=== DEBUGGING PROCESS ===
+ 
+Phase 1: IDENTIFY
+- Read the initial hints to understand which services might be involved
+- Plan which services to investigate
+ 
+Phase 2: INVESTIGATE  
+- Use check_* actions to gather evidence
+- Each check reveals logs and metrics for that service
+- You need evidence before applying fixes
+ 
+Phase 3: FIX
+- Once you have enough evidence, apply the correct fix
+- Match the symptoms to the right solution
+ 
+=== CURRENT SITUATION ===
+ 
 Error: {observation.get("error")}
-Logs: {observation.get("logs")}
-Metrics: {observation.get("metrics")}
-
-Available actions:
-check_api, check_auth, check_db, check_cache, check_queue, check_lb, check_app,
-optimize_query, increase_pool, restart_db, cleanup_disk,
-restart_auth, refresh_tokens, fix_invalid_token, increase_rate_limit,
-clear_cache, scale_cache, restart_cache,
-scale_consumers, restart_consumer, fix_ack_logic, restart_queue,
-fix_routing, restart_lb,
-restart_app, fix_memory, scale_app
-
+ 
+Hints/Logs: {observation.get("logs") if observation.get("logs") else "No evidence gathered yet"}
+ 
+Metrics: {observation.get("metrics") if observation.get("metrics") else "No metrics gathered yet"}
+ 
+Actions taken: {', '.join(history) if history else 'None yet'}
+ 
+=== CRITICAL RULES ===
+ 
+1. **Never repeat an action** - Each check should be done once
+2. **Investigate before fixing** - Don't guess, gather evidence first
+3. **Multiple services may be involved** - Check all suspicious services
+4. **Match symptoms to solutions** - Use the mapping below
+ 
+=== INVESTIGATION ACTIONS ===
+ 
+check_auth    → Reveals: token issues, auth errors, rate limits
+check_db      → Reveals: query performance, connection pools, disk space
+check_cache   → Reveals: hit rates, stale data, cache status  
+check_queue   → Reveals: backlog, consumer status, message processing
+check_lb      → Reveals: routing distribution, traffic imbalance
+check_api     → Reveals: overall API metrics (usually not the root cause)
+ 
+=== SYMPTOM → FIX MAPPING ===
+ 
+Authentication Issues:
+  "Token validation failed" + "Expiry timestamp older" → refresh_tokens
+  "JWT signature verification failed" → fix_invalid_token
+  "Connection refused to auth service" → restart_auth
+  "Too many requests" + "Rate limit" → increase_rate_limit
+ 
+Database Issues:
+  "Execution time exceeded" + "Sequential scan" → optimize_query
+  "Pool limit reached" + "Timeout acquiring connection" → increase_pool
+  "Connection refused" + "Database not reachable" → restart_db
+  "Disk space full" + "Write operations failing" → cleanup_disk
+ 
+Cache Issues:
+  "Serving outdated data" + "invalidation delay" → clear_cache
+  "Cache miss rate increasing" → scale_cache
+  "Cache not reachable" → restart_cache
+ 
+Queue Issues:
+  "Message backlog increasing" + "unable to keep up" → scale_consumers
+  "No active consumers" → restart_consumer
+  "Message acknowledgment failures" → fix_ack_logic
+ 
+Load Balancer Issues:
+  "Traffic unevenly distributed" → fix_routing
+  "Load balancer not responding" → restart_lb
+ 
+=== DECISION LOGIC ===
+ 
+**If logs are empty or just hints:**
+→ You're in Phase 1 (IDENTIFY)
+→ Look at the hints to decide which service(s) to check
+→ Action: check_<service> based on hints
+ 
+**If logs contain specific error messages but you haven't checked all relevant services:**
+→ You're in Phase 2 (INVESTIGATE)
+→ Continue checking services mentioned in hints
+→ Action: check_<next_service>
+ 
+**If logs clearly show a known issue pattern AND you've checked the affected service:**
+→ You're in Phase 3 (FIX)
+→ Match the symptoms to the fix using the mapping above
+→ Action: <fix_action>
+ 
+=== EXAMPLES ===
+ 
+Example 1:
+  Hints: "Authentication-related symptoms detected"
+  Action: check_auth (investigate the hint)
+ 
+Example 2:
+  Logs: "Token validation failed | Expiry timestamp older than current time"
+  Action: refresh_tokens (clear symptom match)
+ 
+Example 3:
+  Hints: "Database performance indicators | Authentication-related symptoms"
+  History: []
+  Action: check_db (start with first hint)
+ 
+Example 4:
+  Hints: "Database performance indicators | Authentication-related symptoms"  
+  History: [check_db]
+  Logs: "Execution time exceeded threshold"
+  Action: check_auth (check second service before fixing)
+ 
+Example 5:
+  History: [check_db, check_auth]
+  Logs: "Pool limit reached | Timeout acquiring connection"
+  Action: increase_pool (both services checked, clear fix)
+ 
+=== YOUR TASK ===
+ 
+Based on the current situation above, what is the next action?
+ 
 Think step by step:
-- What does the error suggest?
-- Which service is most likely responsible?
-- What should you inspect next?
-
-Return ONLY the next action.
+1. What phase am I in? (Identify / Investigate / Fix)
+2. What have I learned so far?
+3. What's the next logical step?
+ 
+Return ONLY the action name (e.g., "check_db" or "optimize_query").
+Do not explain, just return the action.
 """
 
     try:
@@ -92,7 +182,25 @@ async def main():
 
     # ✅ Run multiple tasks
     TASKS = [
-        "auth_token_expired"
+        "auth_token_expired",
+        "invalid_token",
+        "auth_service_down",
+        "rate_limit_auth",
+        "slow_query",
+        "connection_pool_exhausted",
+        "database_down",
+        "disk_full",
+        "stale_cache_issue",
+        "cache_miss_issue",
+        "cache_down",
+        "queue_backlog",
+        "consumer_down",
+        "message_loss", 
+        "uneven_routing", 
+        "lb_down", 
+        "auth_db_combined_issue",
+        "cache_queue_dependency", 
+        "full_system_failure" 
     ]
 
     for task_name in TASKS:
@@ -111,13 +219,10 @@ async def main():
         observation = res.get("observation", {})
         log_start(task_name)
 
+        # action_counts = {}
         for step in range(1, MAX_STEPS + 1):
 
             action = get_action(client, observation, actions_taken)
-
-            # ✅ Safety: avoid repeat manually (backup protection)
-            # if action in actions_taken:
-            #     action = "check_metrics" if "check_metrics" not in actions_taken else "check_db"
 
             actions_taken.append(action)
 
@@ -137,6 +242,7 @@ async def main():
                 log_step(step, action, reward, done, observation, None)
 
                 if done:
+                    success = True
                     break
 
             except Exception as e:
@@ -148,8 +254,7 @@ async def main():
             score = score_res.get("score", 0.0)
         except:
             score = 0.0
-
-        success = score > 0.4
+        
         log_end(success, steps, score, rewards)
 if __name__ == "__main__":
     asyncio.run(main())

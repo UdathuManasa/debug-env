@@ -6,16 +6,25 @@ entrypoint: server.app:main
 
 tasks:
   - api_latency
-  - db_performance
-  - misleading_logs
-  - multi_root_issue
-  - retry_trap_issue
-  - misleading_cache_issue
-  - auth_failure
-  - load_balancer_issue
+  - auth_token_expired
+  - invalid_token
+  - auth_service_down
+  - rate_limit_auth
+  - slow_query
+  - connection_pool_exhausted
   - database_down
-  - rate_limit_issue
-  - security_breach
+  - disk_full
+  - stale_cache_issue
+  - cache_miss_issue
+  - cache_down
+  - queue_backlog
+  - consumer_down
+  - message_loss
+  - uneven_routing
+  - lb_down
+  - auth_db_combined_issue
+  - cache_queue_dependency
+  - full_system_failure
 
 observation_space:
   type: object

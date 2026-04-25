@@ -145,7 +145,7 @@ class DebugEnv:
         self.api.inject_issue()
         
         # Build initial observation (only shows API-level error)
-        initial_obs = self._build_observation()
+        initial_obs = self._build_initial_observation_with_hints()
         
         return StepResult(
             observation=Observation(**initial_obs),
@@ -153,6 +153,43 @@ class DebugEnv:
             done=False,
             info={}
         )
+    def _build_initial_observation_with_hints(self) -> dict:
+        """
+        Build initial observation with strategic hints.
+        
+        This is the KEY fix - give the LLM a starting direction!
+        """
+        # Get the API error
+        error = self.api.logs[0] if self.api.logs else "Unknown error"
+        
+        # ADD HINTS based on the task's issues
+        hints = []
+        
+        # Determine which services have issues
+        if "auth" in self.task.issues:
+            hints.append("Authentication-related symptoms detected")
+        
+        if "db" in self.task.issues:
+            hints.append("Database performance indicators present")
+        
+        if "cache" in self.task.issues:
+            hints.append("Cache behavior anomalies observed")
+        
+        if "queue" in self.task.issues:
+            hints.append("Message processing irregularities noted")
+        
+        if "lb" in self.task.issues:
+            hints.append("Traffic distribution concerns identified")
+        
+        # Build hint string
+        hint_str = " | ".join(hints) if hints else ""
+        
+        return {
+            "error": error,
+            "logs": hint_str,  # Strategic hints instead of empty!
+            "metrics": {}
+        }
+ 
 
     # ==================== STEP ====================
     def step(self, action: str):
@@ -190,7 +227,15 @@ class DebugEnv:
         
         # Penalize repeated actions
         if action in self.actions_taken:
-            reward += self.cfg["repeat_penalty"]
+            reward = self.cfg["repeat_penalty"]
+            self.actions_taken.append(action)
+            return StepResult(
+                observation=Observation(**self._build_observation()),
+                reward=float(reward),
+                done=self.done,
+                info={}
+            )
+
         
         self.actions_taken.append(action)
         

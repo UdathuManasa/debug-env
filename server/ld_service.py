@@ -12,7 +12,9 @@ class LoadBalancerService(BaseService):
         self.logs = []
         self.metrics = {
             "traffic_skew": 0.1,
-            "latency": 50
+            "latency": 50,
+            "error_rate":0.1,
+            "availability":0.8
         }
 
     # ------------------------
@@ -38,7 +40,9 @@ class LoadBalancerService(BaseService):
                 "All requests failing"
             ]
             self.metrics.update({
-                "latency": None
+                "latency": None,
+                "error_rate":1.0,
+                "availability":0.0
             })
 
     # ------------------------
