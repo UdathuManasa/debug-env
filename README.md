@@ -189,24 +189,70 @@ auth_db_combined_issue · cache_queue_dependency · full_system_failure
 
 ---
 
-# 🎯 Reward Design (Judging Criteria Focus)
+# 🎯 Reward Design — Structured Debugging Signals 
 
-| Behavior                | Reward     |
-| ----------------------- | ---------- |
-| Useful investigation    | +3         |
-| Correct fix             | +20 to +30 |
-| Repeated / wrong action | -2 to -5   |
-| Faster resolution       | bonus      |
+Our reward system is designed to enforce **correct debugging discipline** in distributed systems.
 
-### Key Properties
+## 🧩 Reward Breakdown
 
-* Dense signal (not just final reward)
-* Encourages reasoning steps
-* Penalizes shortcut exploitation
-* Hard to game
+### 🔍 Investigation Rewards
 
-Failures propagate across layers.
+| Type | Reward | Description |
+|------|--------|------------|
+| Required Investigation | +5 | Checking services directly related to the issue |
+| Optional Investigation | +2 | Useful but not mandatory checks |
+| Irrelevant Investigation | 0 | No penalty, allows exploration |
 
+---
+
+### 🛠️ Fix Rewards
+
+| Type | Reward |
+|------|--------|
+| Correct Fix | +20 to +30 |
+| Wrong Fix | -5 |
+| Premature Fix (without investigation) | Penalized via bonus loss |
+
+---
+
+### 🔁 Action Penalties
+
+| Behavior | Penalty |
+|----------|--------|
+| Repeated Action | -25 |
+| Invalid Action | -5 |
+
+---
+
+### 🎁 Completion Bonus
+
+| Condition | Reward |
+|----------|--------|
+| Full Investigation + Correct Fix | +10 |
+| Partial Investigation | +3 |
+| No Investigation | -8 |
+
+---
+
+## 🧠 Key Design Properties
+
+### 1. 🔗 Service-Aware Rewards
+
+Each task defines:
+
+- required signals (must check)
+- optional signals (nice to check)
+
+👉 Reward depends on **which service you investigate**, not just action type.
+
+---
+
+### 2. ⛓️ Dependency-Aware Learning
+
+Failures span multiple services:
+
+```text
+Auth → DB → Cache → Queue
 ---
 
 # 🧠 Training Pipeline (End-to-End)
