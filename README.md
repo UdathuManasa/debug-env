@@ -1,5 +1,3 @@
----
-
 # 🔧 Debug-Env: Training LLMs to Perform Root Cause Analysis in Distributed Systems
 
 🚀 An OpenEnv-compatible RL environment where agents learn **production-grade debugging** through multi-step reasoning, cross-service interaction, and causal inference.
