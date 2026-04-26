@@ -1,3 +1,13 @@
+---
+title: Debug Env
+emoji: 🔧
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+app_port: 7860
+base_path: /web
+---
 # 🔧 Debug-Env: Training LLMs to Perform Root Cause Analysis in Distributed Systems
 
 🚀 An OpenEnv-compatible RL environment where agents learn **production-grade debugging** through multi-step reasoning, cross-service interaction, and causal inference.
@@ -6,16 +16,15 @@
 
 ## 🏆 Elevator Pitch
 
-> We built an environment that teaches LLMs to debug distributed systems like SREs — by investigating, reasoning across services, and fixing root causes under uncertainty.
+> I have built an environment that teaches LLMs to debug distributed systems like SREs — by investigating, reasoning across services, and fixing root causes under uncertainty.
 
 ---
 
 ## 🌐 Links
 
-* 🔗 Hugging Face Space: **[ADD_URL]**
-* 📓 Training Notebook (Colab): **[ADD_LINK]**
-* 📊 Reward & Loss Plots: *(below)*
-* 🎥 Demo / Blog: **[ADD_LINK]**
+* 🔗 Hugging Face Space: **https://huggingface.co/spaces/Udathu/debug-env**
+* 📓 Training Notebook (Colab): **https://github.com/UdathuManasa/debug-env/tree/main/trainedmodel**
+* 🎥 Demo / Blog: **https://youtu.be/0YBkrNQqh0c**
 
 ---
 
@@ -109,7 +118,7 @@ Using GRPO training:
 
 ## 🎲 Theme #5 — Wild Card (Our Edge)
 
-We introduce:
+I introduce:
 
 * **Misleading logs vs truthful metrics**
 * **Cascading multi-service failures**
@@ -334,7 +343,7 @@ check_cache → identify miss → scale_cache
 
 # 🎤 Story (Presentation - 30%)
 
-> “We trained an agent to debug systems like an SRE — not by memorizing patterns, but by reasoning across services and identifying root causes.”
+> “I trained an agent to debug systems like an SRE — not by memorizing patterns, but by reasoning across services and identifying root causes.”
 
 ---
 

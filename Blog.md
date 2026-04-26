@@ -13,6 +13,20 @@ This project builds an intelligent debugging agent that identifies and fixes iss
 
 The agent follows a structured reasoning process inspired by real-world debugging workflows.
 
+Debugging is not about applying fixes — it is about understanding how failures propagate through a system.
+
+In real-world distributed systems:
+
+Errors appear in one service
+But originate in another
+And propagate across dependencies
+
+👉 DebugRL trains agents to:
+
+Investigate before acting
+Use logs and metrics together
+Identify root cause across services, not just symptoms
+
 ---
 
 # 🧠 Core Idea
@@ -35,6 +49,14 @@ Instead of blindly applying fixes, the agent follows **three clear phases**:
 * Match observed symptoms to known issues
 * Apply the correct fix action
 
+--- 
+
+## 🌐 Links
+
+* 🔗 Hugging Face Space: **https://huggingface.co/spaces/Udathu/debug-env**
+* 📓 Training Notebook (Colab): **https://github.com/UdathuManasa/debug-env/tree/main/trainedmodel**
+* 🎥 Demo / Blog: **https://youtu.be/0YBkrNQqh0c**
+
 ---
 
 # 🏗️ System Architecture
@@ -51,82 +73,220 @@ Client → Load Balancer → API → Auth → Database → Cache → Queue → C
 
 ---
 
-# 🔍 Services & Failure Patterns
+## 🔍 Service-Level Debugging
 
-### Authentication
+Each service exposes:
 
-* Token expiry
-* Invalid tokens
-* Rate limits
+* **Logs** → surface-level symptoms
+* **Metrics** → deeper system signals
 
-### Database
-
-* Slow queries
-* Connection pool exhaustion
-* Disk full
-
-### Cache
-
-* Low hit rate
-* Stale data
-
-### Queue
-
-* Backlog
-* Consumer failure
-
-### Load Balancer
-
-* Uneven routing
-* High latency
+The agent must combine both to act correctly.
 
 ---
 
-# ⚙️ Action Space
+### 🌐 API Layer
 
-## Investigation Actions
+* **Role**: Entry point for requests
 
-* `check_auth`
-* `check_db`
-* `check_cache`
-* `check_queue`
-* `check_lb`
-* `check_api`
+* **Issues**:
 
-## Fix Actions
+  * High error rate
+  * Increased latency
 
-### Auth
+* **Logs**:
 
-* `refresh_tokens`
-* `fix_invalid_token`
-* `restart_auth`
-* `increase_rate_limit`
+  * “500 Internal Server Error”
+  * “Service unavailable”
 
-### Database
+* **Metrics**:
 
-* `optimize_query`
-* `increase_pool`
-* `restart_db`
-* `cleanup_disk`
+  * Error spikes
+  * Latency increase
 
-### Cache
+* **Action Strategy**:
 
-* `clear_cache`
-* `scale_cache`
-* `restart_cache`
-
-### Queue
-
-* `scale_consumers`
-* `restart_consumer`
-* `fix_ack_logic`
-
-### Load Balancer
-
-* `fix_routing`
-* `restart_lb`
+  * Rarely the root cause
+  * Investigate downstream (Auth, DB, Cache)
 
 ---
+
+### 🔐 Authentication (Auth)
+
+* **Issues**:
+
+  * Token expired / invalid
+  * Rate limiting
+  * Service downtime
+
+* **Logs**:
+
+  * “Invalid token”
+  * “Authentication failed”
+
+* **Metrics**:
+
+  * Failed auth requests
+  * Latency spikes
+
+* **Actions**:
+
+  * `refresh_tokens`
+  * `fix_invalid_token`
+  * `restart_auth`
+
+---
+
+### 🗄️ Database (DB)
+
+* **Issues**:
+
+  * Slow queries
+  * Connection pool exhaustion
+  * Disk full / downtime
+
+* **Logs**:
+
+  * “DB timeout”
+  * “Connection limit reached”
+
+* **Metrics**:
+
+  * High query latency
+  * Low throughput
+
+* **Actions**:
+
+  * `optimize_query`
+  * `increase_pool`
+  * `restart_db`
+
+---
+
+### ⚡ Cache
+
+* **Issues**:
+
+  * Cache miss
+  * Stale data
+  * Service failure
+
+* **Logs**:
+
+  * “Cache miss”
+  * “Stale entry detected”
+
+* **Metrics**:
+
+  * Low hit rate
+  * Increased DB load
+
+* **Actions**:
+
+  * `clear_cache`
+  * `scale_cache`
+
+---
+
+### 📬 Queue
+
+* **Issues**:
+
+  * Backlog growth
+  * Consumer failure
+
+* **Logs**:
+
+  * “Queue backlog increasing”
+  * “Consumer not responding”
+
+* **Metrics**:
+
+  * High queue depth
+  * Low processing rate
+
+* **Actions**:
+
+  * `scale_consumers`
+  * `restart_consumer`
+
+---
+
+### 🌐 Load Balancer (LB)
+
+* **Issues**:
+
+  * Uneven routing
+  * High latency
+
+* **Logs**:
+
+  * “Routing imbalance detected”
+
+* **Metrics**:
+
+  * Uneven traffic distribution
+  * Response delays
+
+* **Actions**:
+
+  * `fix_routing`
+  * `restart_lb`
+
+---
+
+## 🔥 Multi-Level Root Cause Reasoning (Key Differentiator)
+
+In DebugRL, the **visible failure is often misleading**.
+
+### Example 1
+
+* API error observed
+* Logs → Auth failure
+* Metrics → DB latency high
+
+👉 Root Cause: **Database issue**, not Auth
+
+---
+
+### Example 2
+
+* High API latency
+* Logs → Cache working
+* Metrics → Low cache hit rate + high DB load
+
+👉 Root Cause: **Cache inefficiency causing DB overload**
+
+---
+
+### Example 3
+
+* Queue backlog increasing
+* Logs → Consumer failure
+* Metrics → CPU spike
+
+👉 Root Cause: **Resource bottleneck**
+
+---
+
+## 🧠 Key Insight
+
+> The system teaches agents to trace failures **across services**, not fix them locally.
+
+This enables:
+
+* Causal reasoning
+* Dependency-aware debugging
+* Real-world system understanding
+
+---
+
+## 🎯 What Makes This Strong
+
+* Combines logs (symptoms) + metrics (truth)
+* Requires cross-service reasoning
+* Encourages investigation before action
+* Captures real-world debugging behavior
+
 
 # 🧭 Decision Logic
 
@@ -155,29 +315,6 @@ The agent follows strict rules:
 
 → Phase 3 (Fix)
 → Apply correct fix action
-
----
-
-# 🧪 Example Scenarios
-
-### Example 1
-
-**Hint:** Authentication issue
-**Action:** `check_auth`
-
----
-
-### Example 2
-
-**Logs:** Token expired
-**Action:** `refresh_tokens`
-
----
-
-### Example 3
-
-**Logs:** DB connection timeout
-**Action:** `increase_pool`
 
 ---
 
