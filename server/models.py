@@ -6,6 +6,7 @@ class Observation(BaseModel):
     error: str
     logs: str
     metrics: Dict[str, Any]
+    actions_taken : List[str]
 
 
 class Action(BaseModel):

@@ -40,12 +40,24 @@ class DebugEnv:
         self.lb = LoadBalancerService()
         self.app = AppServerService()
         self.api = APIService(self.db, self.auth,self.cache,self.queue,self.lb,self.app)
+    def investigation_reward(self, action):
+
+        # Correct investigation (needed for solving task)
+        if action in self.required_signals:
+            return 5
+
+        # Useful but not mandatory
+        elif action in self.optional_signals:
+            return 2
+
+        # Irrelevant investigation
+        return 0
 
     def _init_rewards(self):
         """Configure reward structure."""
         self.cfg = {
             "invalid_action": -5,
-            "repeat_penalty": -2,
+            "repeat_penalty": -25,
             "final_bonus": 10,
             "partial_investigation": 3,
             "no_investigation": -8,
@@ -187,7 +199,8 @@ class DebugEnv:
         return {
             "error": error,
             "logs": hint_str,  # Strategic hints instead of empty!
-            "metrics": {}
+            "metrics": {},
+            "actions_taken":self.actions_taken
         }
  
 
@@ -247,8 +260,7 @@ class DebugEnv:
         # -------- INVESTIGATION ACTIONS --------
         if action.startswith("check_"):
             # Result is (observation_dict, reward)
-            obs_data, action_reward = result
-            reward += action_reward
+            obs_data, _ = result
             
             # Store in hidden state for observation building
             service_name = action.replace("check_", "")
@@ -259,17 +271,16 @@ class DebugEnv:
                 self.required_signals[action] = True
             if action in self.optional_signals:
                 self.optional_signals[action] = True
-        
+            reward = self.investigation_reward(action)
         # -------- FIX ACTIONS --------
         else:
             # Result is (reward, resolved)
             action_reward, resolved = result
-            reward += action_reward
             
             # Check if this is the solution
             if action == self.task.solution and resolved:
                 # Task solved! Add investigation bonus
-                reward += self._calculate_investigation_bonus()
+                reward = self._calculate_investigation_bonus(action_reward)
                 self.done = True
         
         self.total_reward += reward
@@ -308,11 +319,12 @@ class DebugEnv:
         return {
             "error": error,
             "logs": " | ".join(all_logs) if all_logs else "",
-            "metrics": all_metrics
+            "metrics": all_metrics,
+            "actions_taken": self.actions_taken
         }
 
     # ==================== INVESTIGATION BONUS ====================
-    def _calculate_investigation_bonus(self):
+    def _calculate_investigation_bonus(self,action_reward):
         """
         Calculate bonus based on investigation thoroughness.
         
@@ -333,7 +345,7 @@ class DebugEnv:
         
         # Full investigation
         else:
-            bonus = self.cfg["final_bonus"]
+            bonus = action_reward + self.cfg["final_bonus"]
             
             # Extra bonus for optional checks
             if optional_done > 0:
