@@ -35,156 +35,26 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]):
 
 def get_action(client: OpenAI, observation: dict, history: List[str]) -> str:
     prompt = f"""You are an expert SRE debugging a distributed microservice system.
- 
-=== DEBUGGING PROCESS ===
- 
-Phase 1: IDENTIFY
-- Read the initial hints to understand which services might be involved
-- Plan which services to investigate
- 
-Phase 2: INVESTIGATE  
-- Use check_* actions to gather evidence
-- Each check reveals logs and metrics for that service
-- You need evidence before applying fixes
- 
-Phase 3: FIX
-- Once you have enough evidence, apply the correct fix
-- Match the symptoms to the right solution
- 
-=== CURRENT SITUATION ===
- 
+System Flow : Client → Load Balancer → API → Auth → Database → Cache → Queue → Consumers
+Load Balancer → Distributor (spreads traffic)
+API → Gateway (entry point which routes requests across services)
+Auth → Guard (checks identity)
+Database → Storage (stores data)
+Cache → Speedup (fast access)
+Queue → Line (waits tasks)
 Error: {observation.get("error")}
- 
-Hints/Logs: {observation.get("logs") if observation.get("logs") else "No evidence gathered yet"}
- 
-Metrics: {observation.get("metrics") if observation.get("metrics") else "No metrics gathered yet"}
- 
-Actions taken: {', '.join(history) if history else 'None yet'}
- 
-=== CRITICAL RULES ===
- 
-1. **Never repeat an action** - Each check should be done once
-2. **Investigate before fixing** - Don't guess, gather evidence first
-3. **Multiple services may be involved** - Check all suspicious services
-4. **Match symptoms to solutions** - Use the mapping below
-=== SYSTEM FLOW ===
-
-Client → Load Balancer → API → Auth → Database → Cache → Queue
-========================
-SYSTEM ARCHITECTURE
-========================
-
-Request flow:
-Client → Load Balancer → API → Auth → Database → Cache → Queue → Consumers
-
-Key principles:
-- Failures propagate downstream (early failure breaks everything)
-- Symptoms often appear upstream (API shows errors caused by DB/Auth)
-- Root cause is usually NOT the API layer
-
-========================
-SERVICES OVERVIEW
-========================
-
-Load Balancer (LB):
-- Routes traffic across instances
-- Issues: uneven traffic, high latency, downtime
-
-API:
-- Entry point, shows symptoms (not root cause)
-
-Auth:
-- Handles authentication and tokens
-- Issues: invalid tokens, expired tokens, service down, rate limiting
-
-Database (DB):
-- Stores data
-- Issues: slow queries, connection pool exhaustion, downtime, disk full
-
-Cache:
-- Speeds up reads
-- Issues: stale data, low hit rate, cache down
-
-Queue:
-- Handles async processing
-- Issues: backlog, consumers down, message loss
-
-=== INVESTIGATION ACTIONS ===
- 
-check_auth    → Reveals: token issues, auth errors, rate limits
-check_db      → Reveals: query performance, connection pools, disk space
-check_cache   → Reveals: hit rates, stale data, cache status  
-check_queue   → Reveals: backlog, consumer status, message processing
-check_lb      → Reveals: routing distribution, traffic imbalance
-check_api     → Reveals: overall API metrics (usually not the root cause)
- 
-========================
-AVAILABLE ACTIONS
-========================
-
-Investigation:
-- check_lb, check_api, check_auth, check_db, check_cache, check_queue
-
-Fixes:
-- LB: fix_routing, restart_lb
-- Auth: refresh_tokens, fix_invalid_token, restart_auth, increase_rate_limit
-- DB: optimize_query, increase_pool, restart_db, cleanup_disk
-- Cache: clear_cache, scale_cache, restart_cache
-- Queue: scale_consumers, restart_consumer, fix_ack_logic
-=== DECISION LOGIC ===
- 
-**If logs are empty or just hints:**
-→ You're in Phase 1 (IDENTIFY)
-→ Look at the hints to decide which service(s) to check
-→ Action: check_<service> based on hints
- 
-**If logs contain specific error messages but you haven't checked all relevant services:**
-→ You're in Phase 2 (INVESTIGATE)
-→ Continue checking services mentioned in hints
-→ Action: check_<next_service>
- 
-**If logs clearly show a known issue pattern AND you've checked the affected service:**
-→ You're in Phase 3 (FIX)
-→ Match the symptoms to the fix using the mapping above
-→ Action: <fix_action>
- 
-=== EXAMPLES ===
- 
-Example 1:
-  Hints: "Authentication-related symptoms detected"
-  Action: check_auth (investigate the hint)
- 
-Example 2:
-  Logs: "Token validation failed | Expiry timestamp older than current time"
-  Action: refresh_tokens (clear symptom match)
- 
-Example 3:
-  Hints: "Database performance indicators | Authentication-related symptoms"
-  History: []
-  Action: check_db (start with first hint)
- 
-Example 4:
-  Hints: "Database performance indicators | Authentication-related symptoms"  
-  History: [check_db]
-  Logs: "Execution time exceeded threshold"
-  Action: check_auth (check second service before fixing)
- 
-Example 5:
-  History: [check_db, check_auth]
-  Logs: "Pool limit reached | Timeout acquiring connection"
-  Action: increase_pool (both services checked, clear fix)
- 
-=== YOUR TASK ===
- 
-Based on the current situation above, what is the next action?
- 
-Think step by step:
-1. What phase am I in? (Identify / Investigate / Fix)
-2. What have I learned so far?
-3. What's the next logical step?
- 
-Return ONLY the action name (e.g., "check_db" or "optimize_query").
-Do not explain, just return the action.
+Logs: {observation.get("logs") or "No evidence gathered yet"}
+Metrics: {observation.get("metrics") or "No metrics gathered yet"}
+History(action taken so far): {', '.join(history) if history else "None yet"}
+Rules:Do not repeat actions.Investigate before fixing
+Choose the next action from below by carefully analyzing the logs, metrics, and current observations:
+check_auth, check_db, check_cache, check_queue, check_lb, check_api
+optimize_query, increase_pool, restart_db, cleanup_disk
+restart_auth, refresh_tokens, fix_invalid_token, increase_rate_limit
+clear_cache, scale_cache, restart_cache
+scale_consumers, restart_consumer, fix_ack_logic
+fix_routing, restart_lb
+Return ONLY one action.
 """
 
     try:
