@@ -352,7 +352,9 @@ check_cache → identify miss → scale_cache
 * Reward curve shows improvement
 * Behavior change demonstrated
 * Before vs after comparison included
-
+## 📊 Training Evidence
+- Colab Notebook: trainedmodel/TestDebug.ipynb  
+- Reward Graph: reward_graph.png
 ---
 
 # ⚙️ Reward + Pipeline (10%)
