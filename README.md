@@ -189,9 +189,7 @@ auth_db_combined_issue · cache_queue_dependency · full_system_failure
 
 ---
 
-# 🎯 Reward Design (Judging Criteria Focus)
-
-# 🎯 Reward Design — Structured Debugging Signals
+# 🎯 Reward Design — Structured Debugging Signals (Judging Criteria Focus)
 
 Our reward system is designed to enforce **correct debugging discipline** in distributed systems.
 
